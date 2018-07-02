@@ -2,6 +2,7 @@ import pygame
 import random
 
 pygame.init()
+pygame.mixer.init()
 
 white = (255, 255, 255)
 black = (0, 0, 0)
@@ -16,13 +17,13 @@ coordinates = []
 for x in range(0, display_width - block_size + 1, block_size):
     for y in range(0, display_height - block_size + 1, block_size):
         coordinates.append([float(x), float(y)])
-print(coordinates)
 FPS = 15
+music_choice = 0
 direction = "right"
 clock = pygame.time.Clock()
 small_font = pygame.font.Font("timeburnerbold.ttf", 25)
 med_font = pygame.font.SysFont("timeburnerbold.ttf", 50)
-large_font = pygame.font.SysFont("timeburnerbold.ttf", 80)
+large_font = pygame.font.SysFont("timeburnerbold.ttf", 100)
 
 game_display = pygame.display.set_mode((display_width, display_height))
 pygame.display.set_caption('Snake')
@@ -48,26 +49,102 @@ def game_intro():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_c:
                     intro = False
+                    game_loop()
                 if event.key == pygame.K_q:
                     pygame.quit()
                     quit()
-        game_display.fill(white)
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if pygame.mouse.get_pos()[0] >= display_width - settings_width \
+                        and pygame.mouse.get_pos()[1] >= display_height - settings_height:
+                    if pygame.mouse.get_pos()[0] <= display_width and pygame.mouse.get_pos()[1] <= display_height:
+                        intro = False;
+                        settings()
+        game_display.fill(black)
+        settings_button = small_font.render("Settings", True, white)
+        settings_width, settings_height = settings_button.get_size()
+        game_display.blit(settings_button, [display_width - settings_width, display_height - settings_height])
         message_to_screen("Welcome to Snake",
                           green,
                           -100,
                           size="large")
         message_to_screen("The objective of the game is to eat red apples",
-                          black,
+                          white,
                           -30)
         message_to_screen("The more apples you eat, the longer you get",
-                          black,
+                          white,
                           10)
         message_to_screen("If you run into yourself, or the edges, you die!",
-                          black,
+                          white,
                           50)
         message_to_screen("Press C to play or Q to quit.",
-                          black,
+                          red,
                           180)
+        pygame.display.update()
+        clock.tick(5)
+
+def settings():
+    settings_screen = True
+    global FPS
+    global music_choice
+    while settings:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                # Main Screen Button
+                if pygame.mouse.get_pos()[0] >= display_width - main_screen_width \
+                        and pygame.mouse.get_pos()[1] >= display_height - main_screen_height:
+                    if pygame.mouse.get_pos()[0] <= display_width and pygame.mouse.get_pos()[1] <= display_height:
+                        pygame.mixer.pause()
+                        settings_screen = False;
+                        game_intro()
+                # Music Button 1
+                if pygame.mouse.get_pos()[0] >= 300 and pygame.mouse.get_pos()[1] >= 200:
+                    if pygame.mouse.get_pos()[0] <= 300 + music3_height and pygame.mouse.get_pos()[1] <= \
+                            200 + music3_width:
+                        pygame.mixer.pause()
+                        music_choice = 0
+                        song = pygame.mixer.Sound("Star_song.wav")
+                        song.play()
+                # Music Button 2
+                if pygame.mouse.get_pos()[0] >= 400 and pygame.mouse.get_pos()[1] >= 200:
+                    if pygame.mouse.get_pos()[0] <= 400 + music3_height and pygame.mouse.get_pos()[1] <= \
+                            200 + music3_width:
+                        pygame.mixer.pause()
+                        music_choice = 1
+                        song = pygame.mixer.Sound("Telecom.wav")
+                        song.play()
+                # Music Button #
+                if pygame.mouse.get_pos()[0] >= 500 and pygame.mouse.get_pos()[1] >= 200:
+                    if pygame.mouse.get_pos()[0] <= 500 + music3_height and pygame.mouse.get_pos()[1] <= \
+                            200 + music3_width:
+                        pygame.mixer.pause()
+                        music_choice = 2
+                        song = pygame.mixer.Sound("User_Friendly_future_mix.wav")
+                        song.play()
+        game_display.fill(black)
+        message_to_screen("Settings",
+                          green,
+                          -200,
+                          size="large")
+        music_button = med_font.render("Music:", True, white)
+        game_display.blit(music_button, [150, 200])
+        if music_button.get_rect().collidepoint(pygame.mouse.get_pos()):
+            print('Detected')
+        music1 = med_font.render("1", True, white)
+        game_display.blit(music1, [300, 200])
+        music1_width, music1_height = music1.get_size()
+        music2 = med_font.render("2", True, white)
+        game_display.blit(music2, [400, 200])
+        music2_width, music2_height = music2.get_size()
+        music3 = med_font.render("3", True, white)
+        game_display.blit(music3, [500, 200])
+        music3_width, music3_height = music3.get_size()
+        # Main screen button
+        main_screen_button = small_font.render("Main Screen", True, white)
+        main_screen_width, main_screen_height = main_screen_button.get_size()
+        game_display.blit(main_screen_button, [display_width - main_screen_width, display_height - main_screen_height])
         pygame.display.update()
         clock.tick(5)
 
@@ -111,7 +188,7 @@ def message_to_screen(msg, color, y_displace = 0, size = "small"):
     game_display.blit(text_surface, text_rect)
 
 def score(score):
-    text = small_font.render("Score: " + str(score), True, black)
+    text = small_font.render("Score: " + str(score), True, white)
     game_display.blit(text, [0, 0])
 
 def rand_apple_gen():
@@ -136,17 +213,25 @@ def game_loop():
     snake_list = []
     snake_length = 1
     rand_apple_x, rand_apple_y = rand_apple_gen()
+    if music_choice == 0:
+        song = pygame.mixer.Sound("Star_song.wav")
+    elif music_choice == 1:
+        song = pygame.mixer.Sound("Telecom.wav")
+    elif music_choice == 2:
+        song = pygame.mixer.Sound("User_Friendly_future_mix.wav")
+    song.play()
     while not game_exit:
         while game_over:
-            game_display.fill(black)
+            # game_display.fill(black)
+            pygame.mixer.pause()
             message_to_screen("Game over",
                               red,
                               y_displace=-100,
                               size="large")
-            message_to_screen("Press C to play again or Q to quit",
+            message_to_screen("Press C to play again, M to go to the main menu, or Q to quit",
                               white,
                               y_displace=50,
-                              size="medium")
+                              size="small")
             pygame.display.update()
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -158,6 +243,10 @@ def game_loop():
                         game_over = False
                     if event.key == pygame.K_c:
                         game_loop()
+                    if event.key == pygame.K_m:
+                        game_exit = False
+                        game_over = False
+                        game_intro()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 game_exit = True
@@ -178,13 +267,13 @@ def game_loop():
                     lead_y_change = block_size
                     lead_x_change = 0
                     direction = "down"
-
+        # Snake is out of bounds
         if lead_x >= display_width or lead_x < 0 or lead_y >= display_height or lead_y < 0:
             game_over = True
 
         lead_x += lead_x_change
         lead_y += lead_y_change
-        game_display.fill(white)
+        game_display.fill(black)
         game_display.blit(apple, (rand_apple_x, rand_apple_y))
         snake_head = []
         snake_head.append(lead_x)
